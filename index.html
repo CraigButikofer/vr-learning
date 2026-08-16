@@ -10,8 +10,16 @@
         .hud-btn { background: #222; color: #00adb5; border: 1px solid #00adb5; padding: 8px 16px; margin: 4px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; }
         .hud-btn:hover { background: #00adb5; color: white; }
     </style>
-    <!-- Stable 3D Engine Core -->
-    <script src="https://cloudflare.com"></script>
+    
+    <!-- The Import Map explicitly tells the browser exactly how to resolve script calls without collisions -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com",
+          "three/addons/": "https://unpkg.com"
+        }
+      }
+    </script>
 </head>
 <body>
 
@@ -28,9 +36,10 @@
         <button class="hud-btn" id="right-approach-btn">Right-Side Approach</button>
     </div>
 
-    <!-- Official unblockable WebXR entry utility script module module -->
     <script type="module">
-        import { VRButton } from 'https://jsdelivr.net';
+        // Safe, uniform imports verified via the import map structure above
+        import * as THREE from 'three';
+        import { VRButton } from 'three/addons/webxr/VRButton.js';
 
         let scene, camera, renderer, jApproachLine = null;
         let crossbar, leftStandard, rightStandard;
@@ -87,7 +96,7 @@
         renderer.xr.enabled = true; // Signals secure internal graphics pipe
         document.body.appendChild(renderer.domElement);
 
-        // Append the unblockable Official hardware trigger button directly to the web window bottom
+        // Append the official hardware trigger button directly to the web window bottom
         document.body.appendChild(VRButton.createButton(renderer));
 
         // 3. System Adjustments Framework Functions
@@ -117,7 +126,7 @@
             }
 
             const curveGeo = new THREE.BufferGeometry().setFromPoints(points);
-            const curveMat = new THREE.LineBasicMaterial({ color: 0x00adb5, linewidth: 3 });
+            const curveMat = new THREE.LineBasicMaterial({ color: 0x00adb5 });
             jApproachLine = new THREE.Line(curveGeo, curveMat);
             scene.add(jApproachLine);
         }
@@ -145,3 +154,4 @@
     </script>
 </body>
 </html>
+
