@@ -1,166 +1,96 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>ITLS High Jump Visualizer</title>
+    <title>Firewall-Proof High Jump Trainer</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { margin: 0; overflow: hidden; background-color: #050510; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-        #coach-hud { position: absolute; top: 15px; left: 15px; z-index: 99; background: rgba(0,0,0,0.85); padding: 15px; border-radius: 8px; color: white; border: 1px solid #00adb5; }
-        .hud-btn { background: #222; color: #00adb5; border: 1px solid #00adb5; padding: 8px 16px; margin: 4px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; }
-        .hud-btn:hover { background: #00adb5; color: white; }
-        #vr-trigger-btn { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 99; padding: 16px 32px; background: #e94560; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(233,69,96,0.5); }
-        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        /* 1. Universal Layout Foundations */
+        body { margin: 0; overflow: hidden; background-color: #050510; font-family: sans-serif; height: 100vh; display: flex; align-items: center; justify-content: center; color: white; perspective: 1000px; }
+        
+        /* 3D Immersive Spatial Sandbox Grid Container */
+        .track-void { position: absolute; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; transform-style: preserve-3d; transform: rotateX(20deg) rotateY(-15deg) translateZ(-100px); }
+        
+        /* Concrete Ground reference grid patterns built without scripts */
+        .field-grid { position: absolute; width: 3000px; height: 3000px; background-image: radial-gradient(#00adb5 1px, transparent 1px), radial-gradient(#1c1c28 1px, transparent 1px); background-size: 50px 50px; background-position: 0 0, 25px 25px; transform: rotateX(90deg) translateY(400px); opacity: 0.4; }
+
+        /* 2. Physical High Jump Equipment Mesh Dimensions */
+        .landing-pit { position: absolute; width: 300px; height: 100px; background-color: #0f4c81; border: 4px solid #1a73e8; transform: translateZ(-300px) translateY(100px); display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 0 30px rgba(15,76,129,0.6); font-size: 20px; }
+        
+        .standard-left { position: absolute; width: 6px; height: 260px; background: #777; transform: translateZ(-200px) translateX(-160px) translateY(-30px); }
+        .standard-right { position: absolute; width: 6px; height: 260px; background: #777; transform: translateZ(-200px) translateX(160px) translateY(-30px); }
+        
+        /* The dynamic crossbar bound directly to pure CSS custom height values */
+        .crossbar { position: absolute; width: 326px; height: 8px; background: #ffd700; box-shadow: 0 0 15px #ffaa00; transform: translateZ(-200px) translateY(var(--bar-height, -100px)); transition: transform 0.3s ease; }
+
+        /* 3. Pure CSS J-Approach Curved Pathway Layout Logic */
+        .approach-j-curve { position: absolute; width: 300px; height: 400px; border: 6px dashed #00adb5; border-radius: 0 0 0 100%; transform: rotateX(75deg) translateZ(-160px) translateX(var(--track-shift, -100px)); opacity: 0.8; transition: transform 0.4s ease, border-radius 0.4s ease; }
+
+        /* 4. Secure Coach User Interface Control Center Dashboard */
+        #coach-dashboard { position: absolute; top: 20px; left: 20px; z-index: 999; background: rgba(0,0,0,0.9); padding: 20px; border-radius: 12px; border: 2px solid #00adb5; width: 280px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        h3 { margin: 0 0 10px 0; color: #00adb5; letter-spacing: 1px; }
+        .control-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 6px; font-size: 13px; color: #aaa; }
+        
+        /* Custom styled native radio tabs that store systemic input states layout */
+        .radio-tab { display: none; }
+        .tab-label { display: inline-block; padding: 8px 14px; background: #222; border: 1px solid #444; color: #ccc; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; margin-right: 4px; }
+        
+        /* 5. Zero-JavaScript Interactive Logic State Binding Rules */
+        #height-low:checked ~ .track-void { --bar-height: 40px; }
+        #height-med:checked ~ .track-void { --bar-height: -40px; }
+        #height-high:checked ~ .track-void { --bar-height: -120px; }
+
+        #approach-left:checked ~ .track-void { --track-shift: -110px; --curve-radius: 0 0 0 100%; }
+        #approach-right:checked ~ .track-void { --track-shift: 110px; --curve-radius: 0 0 100% 0; }
+        
+        #approach-left:checked ~ .track-void .approach-j-curve { border-radius: 0 0 0 100%; }
+        #approach-right:checked ~ .track-void .approach-j-curve { border-radius: 0 0 100% 0; }
+
+        #height-low:checked ~ #coach-dashboard label[for="height-low"],
+        #height-med:checked ~ #coach-dashboard label[for="height-med"],
+        #height-high:checked ~ #coach-dashboard label[for="height-high"],
+        #approach-left:checked ~ #coach-dashboard label[for="approach-left"],
+        #approach-right:checked ~ #coach-dashboard label[for="approach-right"] { background: #00adb5; color: white; border-color: #00adb5; }
     </style>
 </head>
 <body>
 
-    <div id="coach-hud">
-        <h3>High Jump Coach Controls</h3>
-        <p>Adjust parameters, then click the pink button below.</p>
-        <hr style="border-color:#333;">
-        <div>Bar Height: <strong id="height-display" style="color:#00adb5; font-size:18px;">2.00</strong>m</div>
-        <button class="hud-btn" id="up-btn">+5 cm</button>
-        <button class="hud-btn" id="down-btn">-5 cm</button>
-        <br><br>
-        <div>Approach Track Pattern:</div>
-        <button class="hud-btn" id="left-approach-btn">Left-Side Approach</button>
-        <button class="hud-btn" id="right-approach-btn">Right-Side Approach</button>
+    <!-- Native HTML Input Variables that act as hard coded memory slots -->
+    <input type="radio" name="height-var" id="height-low" class="radio-tab">
+    <input type="radio" name="height-var" id="height-med" class="radio-tab" checked>
+    <input type="radio" name="height-var" id="height-high" class="radio-tab">
+
+    <input type="radio" name="side-var" id="approach-left" class="radio-tab" checked>
+    <input type="radio" name="side-var" id="approach-right" class="radio-tab">
+
+    <!-- The Coach Controller Panel HUD -->
+    <div id="coach-dashboard">
+        <h3>High Jump Labs (No-JS)</h3>
+        <p style="font-size:11px; color:#888; margin:0 0 15px 0;">Firewall Immune Environment</p>
+        
+        <div class="control-group">
+            <label>TARGET CROSSBAR HEIGHT</label>
+            <label for="height-low" class="tab-label">1.50m (Novice)</label>
+            <label for="height-med" class="tab-label">2.00m (Elite)</label>
+            <label for="height-high" class="tab-label">2.40m (World Class)</label>
+        </div>
+
+        <div class="control-group">
+            <label>RUNWAY APPROACH ROUTE</label>
+            <label for="approach-left" class="tab-label">Left-Side Runway</label>
+            <label for="approach-right" class="tab-label">Right-Side Runway</label>
+        </div>
     </div>
 
-    <button id="vr-trigger-btn">START COACHING SIMULATION</button>
-    <canvas id="xr-canvas"></canvas>
+    <!-- The Actual 3D Virtual Environment Viewport Layer -->
+    <div class="track-void">
+        <div class="field-grid"></div>
+        <div class="landing-pit">MAT / PIT</div>
+        <div class="standard-left"></div>
+        <div class="standard-right"></div>
+        <div class="crossbar"></div>
+        <div class="approach-j-curve"></div>
+    </div>
 
-    <script>
-        const canvas = document.getElementById('xr-canvas');
-        const gl = canvas.getContext('webgl2', { xrCompatible: true });
-        let xrSession = null, xrRefSpace = null;
-        let currentHeight = 2.00;
-        let currentApproach = 'left';
-
-        // 1. Math Engines: Native Matrix Calculations for 3D Movement
-        function createIdentityMatrix() {
-            return new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]);
-        }
-
-        // 2. Core Shader System: Renders solid color blocks directly via WebGL2
-        const vs = `#version 300 es
-            in vec4 position; in vec3 color; out vec3 vColor;
-            uniform mat4 uProj; uniform mat4 uView; uniform mat4 uMove;
-            void main() { vColor = color; gl_Position = uProj * uView * uMove * position; }`;
-        const fs = `#version 300 es
-            precision highp float; in vec3 vColor; out vec4 fColor;
-            void main() { fColor = vec4(vColor, 1.0); }`;
-        
-        const vsShader = gl.createShader(gl.VERTEX_SHADER); gl.shaderSource(vsShader, vs); gl.compileShader(vsShader);
-        const fsShader = gl.createShader(gl.FRAGMENT_SHADER); gl.shaderSource(fsShader, fs); gl.compileShader(fsShader);
-        const program = gl.createProgram(); gl.attachShader(program, vsShader); gl.attachShader(program, fsShader); gl.linkProgram(program);
-
-        let vao, numIndices;
-
-        // 3. Coordinate Generation: Re-draws the high jump environment dynamically
-        function updateTrackGeometry() {
-            const vertices = [];
-            const indices = [];
-            let vIdx = 0;
-
-            // Build Pit Cushion (Blue box: 5m wide, 3m deep, 0.7m high, centered 5.5m away)
-            const pX = 2.5, pY = 0.7, pZStart = -4, pZEnd = -7;
-            const pitColor = [0, 0.3, 0.8];
-            const pVerts = [
-                -pX,pY,pZStart, -pX,0,pZStart,  pX,0,pZStart,  pX,pY,pZStart, // Front wall
-                -pX,pY,pZEnd,   -pX,0,pZEnd,    pX,0,pZEnd,    pX,pY,pZEnd    // Back wall
-            ];
-            pVerts.forEach((v, i) => { vertices.push(v); if(i%3===2) vertices.push(...pitColor); });
-            indices.push(0,1,2, 0,2,3, 4,5,6, 4,6,7, 0,4,5, 0,5,1, 3,2,6, 3,6,7, 0,3,7, 0,7,4);
-            vIdx += 8;
-
-            // Build left standard post (Gray vertical stick at X: -2.0, Z: -4.0)
-            vertices.push(-2.03, 2.5, -4, 0.5,0.5,0.5,  -1.97, 2.5, -4, 0.5,0.5,0.5,  -1.97, 0, -4, 0.3,0.3,0.3,  -2.03, 0, -4, 0.3,0.3,0.3);
-            indices.push(vIdx, vIdx+1, vIdx+2, vIdx, vIdx+2, vIdx+3);
-            vIdx += 4;
-
-            // Build right standard post (Gray vertical stick at X: 2.0, Z: -4.0)
-            vertices.push(1.97, 2.5, -4, 0.5,0.5,0.5,   2.03, 2.5, -4, 0.5,0.5,0.5,   2.03, 0, -4, 0.3,0.3,0.3,   1.97, 0, -4, 0.3,0.3,0.3);
-            indices.push(vIdx, vIdx+1, vIdx+2, vIdx, vIdx+2, vIdx+3);
-            vIdx += 4;
-
-            // Build the dynamic Crossbar (Yellow horizontal bar set at currentHeight)
-            vertices.push(-2.0, currentHeight+0.015, -4, 1,0.8,0,  2.0, currentHeight+0.015, -4, 1,0.8,0,  2.0, currentHeight-0.015, -4, 0.8,0.6,0,  -2.0, currentHeight-0.015, -4, 0.8,0.6,0);
-            indices.push(vIdx, vIdx+1, vIdx+2, vIdx, vIdx+2, vIdx+3);
-            vIdx += 4;
-
-            // Build the dynamic curved J-Approach curve path line segment maps
-            const startX = currentApproach === 'left' ? -5.5 : 5.5;
-            const segments = 20;
-            const curveColor = [0, 0.9, 1.0];
-            
-            for (let i = 0; i < segments; i++) {
-                const t1 = i / segments;
-                const t2 = (i + 1) / segments;
-                
-                let x1 = startX * (1 - t1), z1 = -11 + (7 * t1);
-                if (t1 > 0.5) { const cT = (t1 - 0.5) * 2; x1 = (startX * 0.5) * (1 - cT) + (currentApproach === 'left' ? -1.4 : 1.4) * cT; z1 = -4.0 - 3.5 * Math.cos(cT * Math.PI / 2); }
-                
-                let x2 = startX * (1 - t2), z2 = -11 + (7 * t2);
-                if (t2 > 0.5) { const cT = (t2 - 0.5) * 2; x2 = (startX * 0.5) * (1 - cT) + (currentApproach === 'left' ? -1.4 : 1.4) * cT; z2 = -4.0 - 3.5 * Math.cos(cT * Math.PI / 2); }
-
-                vertices.push(x1, 0.02, z1, ...curveColor,   x2, 0.02, z2, ...curveColor);
-                indices.push(vIdx, vIdx+1);
-                vIdx += 2;
-            }
-
-            numIndices = indices.length;
-
-            // Bind data tracks inside GPU memory blocks cleanly
-            if (vao) gl.deleteVertexArray(vao);
-            vao = gl.createVertexArray(); gl.bindVertexArray(vao);
-            
-            const vbo = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vbo); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-            const ebo = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
-            
-            const posAttr = gl.getAttribLocation(program, 'position'); gl.enableVertexAttribArray(posAttr); gl.vertexAttribPointer(posAttr, 3, gl.FLOAT, false, 24, 0);
-            const colAttr = gl.getAttribLocation(program, 'color'); gl.enableVertexAttribArray(colAttr); gl.vertexAttribPointer(colAttr, 3, gl.FLOAT, false, 24, 12);
-        }
-
-        // 4. Interactive HUD Menu Click Responders
-        document.getElementById('up-btn').addEventListener('click', () => { currentHeight = Math.min(2.50, currentHeight + 0.05); document.getElementById('height-display').innerText = currentHeight.toFixed(2); updateTrackGeometry(); });
-        document.getElementById('down-btn').addEventListener('click', () => { currentHeight = Math.max(0.50, currentHeight - 0.05); document.getElementById('height-display').innerText = currentHeight.toFixed(2); updateTrackGeometry(); });
-        document.getElementById('left-approach-btn').addEventListener('click', () => { currentApproach = 'left'; updateTrackGeometry(); });
-        document.getElementById('right-approach-btn').addEventListener('click', () => { currentApproach = 'right'; updateTrackGeometry(); });
-
-        updateTrackGeometry();
-
-        // 5. Secure Hardware WebXR Lens Handshake Execution
-        const vrTriggerBtn = document.getElementById('vr-trigger-btn');
-        if (navigator.xr) {
-            navigator.xr.isSessionSupported('immersive-vr').then(supported => {
-                if (supported) vrTriggerBtn.addEventListener('click', () => {
-                    navigator.xr.requestSession('immersive-vr', { requiredFeatures: ['local-floor'] }).then(session => {
-                        xrSession = session;
-                        document.getElementById('coach-hud').style.display = 'none';
-                        vrTriggerBtn.style.display = 'none';
-                        const xrLayer = new XRWebGLLayer(xrSession, gl);
-                        xrSession.updateRenderState({ baseLayer: xrLayer });
-                        xrSession.requestReferenceSpace('local-floor').then(space => { xrRefSpace = space; xrSession.requestAnimationFrame(onXRFrame); });
-                    });
-                });
-            });
-        }
-
-        // 6. Infinite Frame Rendering Loop
-        function onXRFrame(time, frame) {
-            xrSession.requestAnimationFrame(onXRFrame);
-            const pose = frame.getViewerPose(xrRefSpace);
-            if (!pose) return;
-
-            const layer = xrSession.renderState.baseLayer;
-            gl.bindFramebuffer(gl.FRAMEBUFFER, layer.framebuffer);
-            gl.clearColor(0.01, 0.01, 0.03, 1.0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-            gl.enable(gl.DEPTH_TEST);
-
-            const moveMatrix = createIdentityMatrix();
-
-            for (const view of pose.views) {
-                const viewport = layer.getViewport(view);
-                gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
-                gl.useProgram(program);
+</body>
+</html>
