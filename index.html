@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>High Jump WebXR Laboratory</title>
+    <title>High Jump WebXR Pro</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body { margin: 0; overflow: hidden; background-color: #0b0b15; font-family: sans-serif; }
@@ -9,23 +9,17 @@
         #coach-hud { position: absolute; top: 15px; left: 15px; z-index: 99; background: rgba(0,0,0,0.85); padding: 15px; border-radius: 8px; color: white; border: 1px solid #00adb5; }
         .hud-btn { background: #222; color: #00adb5; border: 1px solid #00adb5; padding: 8px 16px; margin: 4px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; }
         .hud-btn:hover { background: #00adb5; color: white; }
+        /* Fallback HTML immersion initialization trigger button */
+        #vr-trigger-btn { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 99; padding: 16px 32px; background: #e94560; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(233,69,96,0.5); display: none; }
     </style>
-    
-    <!-- The Import Map explicitly tells the browser exactly how to resolve script calls without collisions -->
-    <script type="importmap">
-      {
-        "imports": {
-          "three": "https://unpkg.com",
-          "three/addons/": "https://unpkg.com"
-        }
-      }
-    </script>
+    <!-- Single global script source to clear module conflicts and script crashes -->
+    <script src="https://cloudflare.com"></script>
 </head>
 <body>
 
     <div id="coach-hud">
         <h3>High Jump Coach Controls</h3>
-        <p>Set parameters below, then click the <strong>"ENTER VR"</strong> button at the bottom of the screen!</p>
+        <p>Set parameters, then click the pink button below!</p>
         <hr style="border-color:#333;">
         <div>Bar Height: <strong id="height-display" style="color:#00adb5; font-size:18px;">2.00</strong>m</div>
         <button class="hud-btn" id="up-btn">+5 cm</button>
@@ -36,11 +30,10 @@
         <button class="hud-btn" id="right-approach-btn">Right-Side Approach</button>
     </div>
 
-    <script type="module">
-        // Safe, uniform imports verified via the import map structure above
-        import * as THREE from 'three';
-        import { VRButton } from 'three/addons/webxr/VRButton.js';
+    <button id="vr-trigger-btn">START COACHING SIMULATION</button>
 
+    <script>
+        // Non-module global framework execution paths
         let scene, camera, renderer, jApproachLine = null;
         let crossbar, leftStandard, rightStandard;
         let currentHeight = 2.00;
@@ -55,12 +48,12 @@
         dirLight.position.set(5, 12, 4);
         scene.add(dirLight);
 
-        // Ground reference line network grid
+        // Ground reference tracking grid mesh pattern
         const gridHelper = new THREE.GridHelper(40, 40, 0x00adb5, 0x1c1c28);
         gridHelper.position.y = 0.001;
         scene.add(gridHelper);
 
-        // High Jump Landing Cushion Pit (5m x 3m x 0.7m)
+        // High Jump Landing Cushion Pit (5m wide x 3m deep x 0.7m high)
         const pitGeo = new THREE.BoxGeometry(5, 0.7, 3);
         const pitMat = new THREE.MeshStandardMaterial({ color: 0x0f4c81, roughness: 0.7 });
         const pit = new THREE.Mesh(pitGeo, pitMat);
@@ -93,11 +86,8 @@
 
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.xr.enabled = true; // Signals secure internal graphics pipe
+        renderer.xr.enabled = true; // Auto-wires spatial pipeline bindings directly
         document.body.appendChild(renderer.domElement);
-
-        // Append the official hardware trigger button directly to the web window bottom
-        document.body.appendChild(VRButton.createButton(renderer));
 
         // 3. System Adjustments Framework Functions
         function adjustBar(amount) {
@@ -131,22 +121,48 @@
             scene.add(jApproachLine);
         }
 
-        // Attach interface event listeners to handle layout mutations
+        // Attach layout actions securely to clear inline parsing problems
         document.getElementById('up-btn').addEventListener('click', () => adjustBar(0.05));
         document.getElementById('down-btn').addEventListener('click', () => adjustBar(-0.05));
         document.getElementById('left-approach-btn').addEventListener('click', () => setApproach('left'));
         document.getElementById('right-approach-btn').addEventListener('click', () => setApproach('right'));
         
-        // Load defaults
         setApproach('left');
 
-        // 4. Stable Infinite Loop Engine
-        renderer.setAnimationLoop(() => {
+        // 4. Secure WebXR Device Activation Link Handshake
+        const vrTriggerBtn = document.getElementById('vr-trigger-btn');
+        
+        if (navigator.xr) {
+            navigator.xr.isSessionSupported('immersive-vr').then(function(supported) {
+                if (supported) {
+                    vrTriggerBtn.style.display = 'block'; // Make button visible only when hardware validation clears
+                    vrTriggerBtn.addEventListener('click', enterImmersiveVR);
+                } else {
+                    vrTriggerBtn.style.display = 'block';
+                    vrTriggerBtn.innerText = "XR Hardware Denied By Browser Profile";
+                }
+            });
+        } else {
+            vrTriggerBtn.style.display = 'block';
+            vrTriggerBtn.innerText = "WebXR Hook Missing In Browser";
+        }
+
+        function enterImmersiveVR() {
+            navigator.xr.requestSession('immersive-vr', { requiredFeatures: ['local-floor'] }).then(function(session) {
+                document.getElementById('coach-hud').style.display = 'none';
+                vrTriggerBtn.style.display = 'none';
+                renderer.xr.setSession(session);
+            }).catch(function(err) {
+                alert("VR Initialization Aborted: " + err.message);
+            });
+        }
+
+        // 5. Stable Rendering Ticker Loop
+        renderer.setAnimationLoop(function() {
             renderer.render(scene, camera);
         });
 
-        // Track resize events gracefully
-        window.addEventListener('resize', () => {
+        window.addEventListener('resize', function() {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
@@ -154,4 +170,3 @@
     </script>
 </body>
 </html>
-
