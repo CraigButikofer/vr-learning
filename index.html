@@ -7,13 +7,10 @@
         body { margin: 0; overflow: hidden; background-color: #0b0b15; font-family: sans-serif; }
         #ui { position: absolute; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100vw; height: 100vh; background: rgba(11,11,21,0.9); }
         #vr-button { padding: 16px 32px; background: #00adb5; color: white; border: none; border-radius: 8px; font-size: 20px; font-weight: bold; cursor: pointer; }
-        
-        /* Floating HUD Controls for the Coach inside the browser view */
         #coach-hud { position: absolute; top: 15px; left: 15px; z-index: 5; background: rgba(0,0,0,0.75); padding: 15px; border-radius: 8px; color: white; border: 1px solid #00adb5; }
         .hud-btn { background: #333; color: white; border: 1px solid #555; padding: 6px 12px; margin: 4px; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .hud-btn:hover { background: #00adb5; }
     </style>
-    <!-- Secure, unblockable 3D core rendering architecture -->
     <script src="https://cloudflare.com"></script>
 </head>
 <body>
@@ -25,44 +22,40 @@
     <div id="coach-hud">
         <h3>Coach Controls</h3>
         <div>Bar Height: <span id="height-display">2.00</span>m</div>
-        <button class="hud-btn" onclick="adjustBar(0.05)">+5 cm</button>
-        <button class="hud-btn" onclick="adjustBar(-0.05)">-5 cm</button>
+        <button class="hud-btn" id="up-btn">+5 cm</button>
+        <button class="hud-btn" id="down-btn">-5 cm</button>
         <br><br>
         <div>Approach Track Pattern:</div>
-        <button class="hud-btn" onclick="setApproach('left')">Left-Side (Right Foot Takeoff)</button>
-        <button class="hud-btn" onclick="setApproach('right')">Right-Side (Left Foot Takeoff)</button>
+        <button class="hud-btn" id="left-approach-btn">Left-Side (Right Foot Takeoff)</button>
+        <button class="hud-btn" id="right-approach-btn">Right-Side (Left Foot Takeoff)</button>
     </div>
 
     <script type="module">
-        let scene, camera, renderer, xrSession, xrRefSpace;
-        let crossbar, leftStandard, rightStandard, jApproachLine = null;
-        let currentHeight = 2.00; // Starting baseline bar height in meters
+        let scene, camera, renderer, jApproachLine = null;
+        let crossbar, leftStandard, rightStandard;
+        let currentHeight = 2.00;
         let currentSide = 'left';
 
-        // Initialize physical 3D scene engine layout
+        // 1. Core Scene Set Up
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0x0a0a15);
 
-        // Add soft ambient gym lighting
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
         const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
         dirLight.position.set(5, 10, 2);
         scene.add(dirLight);
 
-        // Build Reference Runway Floor Grid
         const gridHelper = new THREE.GridHelper(30, 30, 0x00adb5, 0x222233);
         gridHelper.position.y = 0.001; 
         scene.add(gridHelper);
 
-        // Build High Jump Landing Pit (5m wide, 3m deep, 0.7m high)
         const pitGeo = new THREE.BoxGeometry(5, 0.7, 3);
         const pitMat = new THREE.MeshStandardMaterial({ color: 0x0f4c81, roughness: 0.6 });
         const pit = new THREE.Mesh(pitGeo, pitMat);
-        pit.position.set(0, 0.35, -5.5); // Placed securely in front of user point
+        pit.position.set(0, 0.35, -5.5);
         scene.add(pit);
 
-        // Create Standards Structure
         const standardGeo = new THREE.CylinderGeometry(0.03, 0.03, 2.8, 16);
         const standardMat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.5 });
         
@@ -74,32 +67,29 @@
         rightStandard.position.set(2.0, 1.4, -4.0);
         scene.add(rightStandard);
 
-        // Create the Neon Crossbar (4 meters wide spanning between standards)
         const barGeo = new THREE.CylinderGeometry(0.015, 0.015, 4.0, 16);
-        const barMat = new THREE.MeshStandardMaterial({ color: 0xffd700, emissive: 0xffaa00, emissiveIntensity: 0.2 });
+        const barMat = new THREE.MeshStandardMaterial({ color: 0xffd700 });
         crossbar = new THREE.Mesh(barGeo, barMat);
         crossbar.rotation.z = Math.PI / 2;
+        crossbar.position.set(0, currentHeight, -4.0);
         scene.add(crossbar);
 
-        // Setup standard screen-view camera as a backup canvas rendering path
         camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.set(0, 1.6, 0);
 
-        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.xr.enabled = true;
+        renderer.xr.enabled = true; // Pre-allocates hardware bindings securely
         document.body.appendChild(renderer.domElement);
 
-        // Core calculation matrix loop to update high jump height geometry variables dynamically
-        window.adjustBar = function(amount) {
+        // 2. Interface Interaction Triggers
+        function adjustBar(amount) {
             currentHeight = Math.max(0.5, Math.min(2.6, currentHeight + amount));
             document.getElementById('height-display').innerText = currentHeight.toFixed(2);
             crossbar.position.set(0, currentHeight, -4.0);
-        };
-        adjustBar(0); // Run initial alignment update loop
+        }
 
-        // Generate the complex curving J-Approach tracking layout coordinates
-        window.setApproach = function(side) {
+        function setApproach(side) {
             currentSide = side;
             if(jApproachLine) scene.remove(jApproachLine);
 
@@ -107,10 +97,8 @@
             const segments = 30;
             const startX = side === 'left' ? -6 : 6;
             
-            // Build the straight-to-curve run pattern mathematically
             for (let i = 0; i <= segments; i++) {
                 const t = i / segments;
-                // Straight path transitioning smoothly into the takeoff plant radius
                 let x = startX * (1 - t);
                 let z = -12 + (8 * t);
                 if (t > 0.5) {
@@ -122,27 +110,47 @@
             }
 
             const curveGeo = new THREE.BufferGeometry().setFromPoints(points);
-            const curveMat = new THREE.LineBasicMaterial({ color: 0x00adb5, linewidth: 4 });
+            const curveMat = new THREE.LineBasicMaterial({ color: 0x00adb5 });
             jApproachLine = new THREE.Line(curveGeo, curveMat);
             scene.add(jApproachLine);
-        };
-        setApproach('left'); // Default starting approach setup tracker
+        }
 
-        // Hook up WebXR hardware activation loops
+        // Attach layout actions securely to clear inline execution errors
+        document.getElementById('up-btn').addEventListener('click', () => adjustBar(0.05));
+        document.getElementById('down-btn').addEventListener('click', () => adjustBar(-0.05));
+        document.getElementById('left-approach-btn').addEventListener('click', () => setApproach('left'));
+        document.getElementById('right-approach-btn').addEventListener('click', () => setApproach('right'));
+        
+        setApproach('left');
+
+        // 3. Secure WebXR Sensor Handshake
         const vrButton = document.getElementById('vr-button');
-        vrButton.addEventListener('click', async () => {
-            xrSession = await navigator.xr.requestSession('immersive-vr', { requiredFeatures: ['local-floor'] });
-            document.getElementById('ui').style.display = 'none';
-            renderer.xr.setSession(xrSession);
-        });
-
-        // Frame rendering cycle tracking loops
-        function animate() {
-            renderer.setAnimationLoop(() => {
-                renderer.render(scene, camera);
+        if (navigator.xr) {
+            navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
+                if (supported) {
+                    vrButton.addEventListener('click', onConnectVR);
+                } else {
+                    vrButton.innerText = "VR Hardware Access Restrained";
+                }
             });
         }
-        animate();
+
+        async function onConnectVR() {
+            // Force user interaction tracking loops cleanly in the browser context thread
+            const sessionOptions = { requiredFeatures: ['local-floor'] };
+            navigator.xr.requestSession('immersive-vr', sessionOptions).then((session) => {
+                document.getElementById('ui').style.display = 'none';
+                document.getElementById('coach-hud').style.display = 'none'; // Clear UI overlays inside immersive frames
+                renderer.xr.setSession(session);
+            }).catch((err) => {
+                alert("WebXR Connection Denied: " + err.message);
+            });
+        }
+
+        // 4. Stable Frame Renderer Loops
+        renderer.setAnimationLoop(() => {
+            renderer.render(scene, camera);
+        });
     </script>
 </body>
 </html>
