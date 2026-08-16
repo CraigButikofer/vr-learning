@@ -1,95 +1,65 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Firewall-Proof High Jump Trainer</title>
+    <title>ITLS Spatial High Jump Lab</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        /* 1. Universal Layout Foundations */
-        body { margin: 0; overflow: hidden; background-color: #050510; font-family: sans-serif; height: 100vh; display: flex; align-items: center; justify-content: center; color: white; perspective: 1000px; }
+        /* Force a clean panoramic split layout across the viewport lenses */
+        body { margin: 0; background-color: #020208; color: #ffffff; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* 3D Immersive Spatial Sandbox Grid Container */
-        .track-void { position: absolute; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; transform-style: preserve-3d; transform: rotateX(20deg) rotateY(-15deg) translateZ(-100px); }
-        
-        /* Concrete Ground reference grid patterns built without scripts */
-        .field-grid { position: absolute; width: 3000px; height: 3000px; background-image: radial-gradient(#00adb5 1px, transparent 1px), radial-gradient(#1c1c28 1px, transparent 1px); background-size: 50px 50px; background-position: 0 0, 25px 25px; transform: rotateX(90deg) translateY(400px); opacity: 0.4; }
+        /* Dashboard configuration box */
+        #coach-hud { background: rgba(0,0,0,0.9); padding: 15px; text-align: center; border-bottom: 2px solid #00adb5; z-index: 99; }
+        h2 { margin: 0 0 5px 0; color: #00adb5; font-size: 20px; }
+        p { margin: 0; font-size: 13px; color: #ccc; }
 
-        /* 2. Physical High Jump Equipment Mesh Dimensions */
-        .landing-pit { position: absolute; width: 300px; height: 100px; background-color: #0f4c81; border: 4px solid #1a73e8; transform: translateZ(-300px) translateY(100px); display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 0 30px rgba(15,76,129,0.6); font-size: 20px; }
+        /* The Panorama Canvas Container */
+        .panoramic-canvas { display: flex; width: 100vw; height: calc(100vh - 70px); background: #050512; position: relative; }
         
-        .standard-left { position: absolute; width: 6px; height: 260px; background: #777; transform: translateZ(-200px) translateX(-160px) translateY(-30px); }
-        .standard-right { position: absolute; width: 6px; height: 260px; background: #777; transform: translateZ(-200px) translateX(160px) translateY(-30px); }
-        
-        /* The dynamic crossbar bound directly to pure CSS custom height values */
-        .crossbar { position: absolute; width: 326px; height: 8px; background: #ffd700; box-shadow: 0 0 15px #ffaa00; transform: translateZ(-200px) translateY(var(--bar-height, -100px)); transition: transform 0.3s ease; }
-
-        /* 3. Pure CSS J-Approach Curved Pathway Layout Logic */
-        .approach-j-curve { position: absolute; width: 300px; height: 400px; border: 6px dashed #00adb5; border-radius: 0 0 0 100%; transform: rotateX(75deg) translateZ(-160px) translateX(var(--track-shift, -100px)); opacity: 0.8; transition: transform 0.4s ease, border-radius 0.4s ease; }
-
-        /* 4. Secure Coach User Interface Control Center Dashboard */
-        #coach-dashboard { position: absolute; top: 20px; left: 20px; z-index: 999; background: rgba(0,0,0,0.9); padding: 20px; border-radius: 12px; border: 2px solid #00adb5; width: 280px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
-        h3 { margin: 0 0 10px 0; color: #00adb5; letter-spacing: 1px; }
-        .control-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 6px; font-size: 13px; color: #aaa; }
-        
-        /* Custom styled native radio tabs that store systemic input states layout */
-        .radio-tab { display: none; }
-        .tab-label { display: inline-block; padding: 8px 14px; background: #222; border: 1px solid #444; color: #ccc; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; margin-right: 4px; }
-        
-        /* 5. Zero-JavaScript Interactive Logic State Binding Rules */
-        #height-low:checked ~ .track-void { --bar-height: 40px; }
-        #height-med:checked ~ .track-void { --bar-height: -40px; }
-        #height-high:checked ~ .track-void { --bar-height: -120px; }
-
-        #approach-left:checked ~ .track-void { --track-shift: -110px; --curve-radius: 0 0 0 100%; }
-        #approach-right:checked ~ .track-void { --track-shift: 110px; --curve-radius: 0 0 100% 0; }
-        
-        #approach-left:checked ~ .track-void .approach-j-curve { border-radius: 0 0 0 100%; }
-        #approach-right:checked ~ .track-void .approach-j-curve { border-radius: 0 0 100% 0; }
-
-        #height-low:checked ~ #coach-dashboard label[for="height-low"],
-        #height-med:checked ~ #coach-dashboard label[for="height-med"],
-        #height-high:checked ~ #coach-dashboard label[for="height-high"],
-        #approach-left:checked ~ #coach-dashboard label[for="approach-left"],
-        #approach-right:checked ~ #coach-dashboard label[for="approach-right"] { background: #00adb5; color: white; border-color: #00adb5; }
+        /* Generate an interactive, self-contained SVG tracking array */
+        .lens-projection { width: 100%; height: 100%; }
     </style>
 </head>
 <body>
 
-    <!-- Native HTML Input Variables that act as hard coded memory slots -->
-    <input type="radio" name="height-var" id="height-low" class="radio-tab">
-    <input type="radio" name="height-var" id="height-med" class="radio-tab" checked>
-    <input type="radio" name="height-var" id="height-high" class="radio-tab">
-
-    <input type="radio" name="side-var" id="approach-left" class="radio-tab" checked>
-    <input type="radio" name="side-var" id="approach-right" class="radio-tab">
-
-    <!-- The Coach Controller Panel HUD -->
-    <div id="coach-dashboard">
-        <h3>High Jump Labs (No-JS)</h3>
-        <p style="font-size:11px; color:#888; margin:0 0 15px 0;">Firewall Immune Environment</p>
-        
-        <div class="control-group">
-            <label>TARGET CROSSBAR HEIGHT</label>
-            <label for="height-low" class="tab-label">1.50m (Novice)</label>
-            <label for="height-med" class="tab-label">2.00m (Elite)</label>
-            <label for="height-high" class="tab-label">2.40m (World Class)</label>
-        </div>
-
-        <div class="control-group">
-            <label>RUNWAY APPROACH ROUTE</label>
-            <label for="approach-left" class="tab-label">Left-Side Runway</label>
-            <label for="approach-right" class="tab-label">Right-Side Runway</label>
-        </div>
+    <div id="coach-hud">
+        <h2>HIGH JUMP SPATIAL TRACK LAB</h2>
+        <p>Use your Quest Browser's native zoom/fullscreen toolbar icon to enter 360° immersion!</p>
     </div>
 
-    <!-- The Actual 3D Virtual Environment Viewport Layer -->
-    <div class="track-void">
-        <div class="field-grid"></div>
-        <div class="landing-pit">MAT / PIT</div>
-        <div class="standard-left"></div>
-        <div class="standard-right"></div>
-        <div class="crossbar"></div>
-        <div class="approach-j-curve"></div>
+    <div class="panoramic-canvas">
+        <!-- SVG Vector Map simulating a full scale field array without external dependencies -->
+        <svg class="lens-projection" viewBox="0 0 1000 500" xmlns="http://w3.org">
+            <!-- Sky Void and Track Horizon line -->
+            <rect width="1000" height="500" fill="#0c0c1e"/>
+            <line x1="0" y1="300" x2="1000" y2="300" stroke="#00adb5" stroke-width="2" opacity="0.3"/>
+            
+            <!-- Ground Reference Running Track Grids -->
+            <path d="M 100,500 L 450,300 M 900,500 L 550,300 M 500,500 L 500,300" stroke="#1c1c3a" stroke-width="3"/>
+            <path d="M 0,400 L 1000,400 M 0,450 L 1000,450" stroke="#1c1c3a" stroke-width="2"/>
+
+            <!-- High Jump Landing Pit (Center Profile) -->
+            <rect x="350" y="240" width="300" height="80" fill="#0f4c81" rx="5" stroke="#1a73e8" stroke-width="3"/>
+            <text x="500" y="285" fill="#ffffff" font-size="16" font-weight="bold" text-anchor="middle" opacity="0.6">MAT / PIT</text>
+
+            <!-- Vertical Standards Uprights -->
+            <line x1="330" y1="320" x2="330" y2="100" stroke="#777777" stroke-width="6"/>
+            <line x1="670" y1="320" x2="670" y2="100" stroke="#777777" stroke-width="6"/>
+
+            <!-- The Crossbar (Set at an elite visual reference tier) -->
+            <line x1="330" y1="140" x2="670" y2="140" stroke="#ffd700" stroke-width="5"/>
+            <!-- Glowing crossbar element shadow filter effect -->
+            <line x1="330" y1="140" x2="670" y2="140" stroke="#ffaa00" stroke-width="5" stroke-dasharray="5,5" opacity="0.7"/>
+
+            <!-- Left and Right Combined J-Approach Footprint Pathway Overlays -->
+            <!-- Left Side Path (White Dots) -->
+            <path d="M 150,480 Q 220,400 310,330 T 340,150" fill="none" stroke="#ffffff" stroke-width="4" stroke-dasharray="8,8" opacity="0.5"/>
+            <!-- Right Side Path (Neon Blue Dots) -->
+            <path d="M 850,480 Q 780,400 690,330 T 660,150" fill="none" stroke="#00adb5" stroke-width="4" stroke-dasharray="8,8" opacity="0.5"/>
+            
+            <!-- Dynamic Height Grid Indicators -->
+            <text x="305" y="145" fill="#ffd700" font-size="12" font-weight="bold" text-anchor="end">2.00m</text>
+            <text x="695" y="145" fill="#ffd700" font-size="12" font-weight="bold" text-anchor="start">2.00m</text>
+        </svg>
     </div>
 
 </body>
