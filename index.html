@@ -1,33 +1,21 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>My ITLS VR Classroom</title>
-    <!-- This script pulls the A-Frame framework from the web so you don't download anything -->
+    <title>ITLS VR Room</title>
     <script src="https://aframe.io"></script>
   </head>
   <body>
-    <!-- <a-scene> creates the 3D virtual environment -->
-    <a-scene>
+    <a-scene font-secret-fix>
+      <!-- Clean Blue sky environment -->
+      <a-sky color="#A0C4FF"></a-sky>
+
+      <!-- Gray concrete reference ground grid -->
+      <a-plane position="0 0 0" rotation="-90 0 0" width="20" height="20" color="#777777"></a-plane>
+
+      <!-- The main instruction block right in front of the camera viewpoint -->
+      <a-box position="0 1.5 -3" width="1.5" height="1.5" depth="1.5" color="#FF0055"></a-box>
       
-      <!-- Background / Sky Color -->
-      <a-sky color="#ECECEC"></a-sky>
-
-      <!-- The Floor -->
-      <a-plane position="0 0 0" rotation="-90 0 0" width="10" height="10" color="#7BC8A4"></a-plane>
-
-      <!-- Instructional Text (Mayer's Spatial Contiguity Principle) -->
-      <a-text value="Welcome to the Solar System Exhibit" color="#111" position="-2 2.5 -3" width="6"></a-text>
-
-      <!-- Visual Anchors / 3D Shapes -->
-      <!-- Position coordinates are X (Left/Right), Y (Up/Down), Z (Forward/Backward) -->
-      <a-sphere position="0 1.25 -3" radius="1.25" color="#EF2D5E"></a-sphere>
-      <a-box position="-2 0.5 -2" rotation="0 45 0" width="1" height="1" depth="1" color="#4CC3D9"></a-box>
-      <a-cylinder position="2 0.75 -2.5" radius="0.5" height="1.5" color="#FFC65D"></a-cylinder>
-
-      <!-- Camera & Controller setup so you can interact with the objects -->
-      
-        <a-cursor color="black"></a-cursor>
-      
+      <!-- Safe lighting setup -->
       
       
     </a-scene>
