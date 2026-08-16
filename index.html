@@ -1,23 +1,31 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>ITLS VR Room</title>
-    <script src="https://aframe.io"></script>
-  </head>
-  <body>
-    <a-scene font-secret-fix>
-      <!-- Clean Blue sky environment -->
-      <a-sky color="#A0C4FF"></a-sky>
-
-      <!-- Gray concrete reference ground grid -->
-      <a-plane position="0 0 0" rotation="-90 0 0" width="20" height="20" color="#777777"></a-plane>
-
-      <!-- The main instruction block right in front of the camera viewpoint -->
-      <a-box position="0 1.5 -3" width="1.5" height="1.5" depth="1.5" color="#FF0055"></a-box>
-      
-      <!-- Safe lighting setup -->
-      
-      
-    </a-scene>
-  </body>
+<head>
+    <title>ITLS Interactive Sandbox</title>
+    <style>
+        body { margin: 0; background-color: #1a1a2e; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        canvas { border: 4px solid #e94560; background-color: #161625; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        h1 { margin-bottom: 10px; font-size: 28px; letter-spacing: 2px; }
+    </style>
+</head>
+<body>
+    <h1>ITLS LEARNING SANDBOX</h1>
+    <canvas id="canvas" width="600" height="400"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let balls = [{x: 100, y: 100, vx: 4, vy: 3, radius: 20, color: '#e94560'}, {x: 300, y: 200, vx: -3, vy: 5, radius: 25, color: '#0f4c81'}];
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            balls.forEach(b => {
+                ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2); ctx.fillStyle = b.color; ctx.fill(); ctx.closePath();
+                b.x += b.vx; b.y += b.vy;
+                if(b.x - b.radius < 0 || b.x + b.radius > canvas.width) b.vx *= -1;
+                if(b.y - b.radius < 0 || b.y + b.radius > canvas.height) b.vy *= -1;
+            });
+            requestAnimationFrame(animate);
+        }
+        animate();
+    </script>
+</body>
 </html>
