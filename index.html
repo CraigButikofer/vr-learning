@@ -1,25 +1,22 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>High Jump WebXR Pro</title>
+    <title>ITLS High Jump Visualizer</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { margin: 0; overflow: hidden; background-color: #0b0b15; font-family: sans-serif; }
-        /* Floating Interface Controls on the Web Screen */
+        body { margin: 0; overflow: hidden; background-color: #050510; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
         #coach-hud { position: absolute; top: 15px; left: 15px; z-index: 99; background: rgba(0,0,0,0.85); padding: 15px; border-radius: 8px; color: white; border: 1px solid #00adb5; }
         .hud-btn { background: #222; color: #00adb5; border: 1px solid #00adb5; padding: 8px 16px; margin: 4px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; }
         .hud-btn:hover { background: #00adb5; color: white; }
-        /* Fallback HTML immersion initialization trigger button */
-        #vr-trigger-btn { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 99; padding: 16px 32px; background: #e94560; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(233,69,96,0.5); display: none; }
+        #vr-trigger-btn { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 99; padding: 16px 32px; background: #e94560; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(233,69,96,0.5); }
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
     </style>
-    <!-- Single global script source to clear module conflicts and script crashes -->
-    <script src="https://cloudflare.com"></script>
 </head>
 <body>
 
     <div id="coach-hud">
         <h3>High Jump Coach Controls</h3>
-        <p>Set parameters, then click the pink button below!</p>
+        <p>Adjust parameters, then click the pink button below.</p>
         <hr style="border-color:#333;">
         <div>Bar Height: <strong id="height-display" style="color:#00adb5; font-size:18px;">2.00</strong>m</div>
         <button class="hud-btn" id="up-btn">+5 cm</button>
@@ -31,142 +28,139 @@
     </div>
 
     <button id="vr-trigger-btn">START COACHING SIMULATION</button>
+    <canvas id="xr-canvas"></canvas>
 
     <script>
-        // Non-module global framework execution paths
-        let scene, camera, renderer, jApproachLine = null;
-        let crossbar, leftStandard, rightStandard;
+        const canvas = document.getElementById('xr-canvas');
+        const gl = canvas.getContext('webgl2', { xrCompatible: true });
+        let xrSession = null, xrRefSpace = null;
         let currentHeight = 2.00;
+        let currentApproach = 'left';
 
-        // 1. Initialize Scene Architecture
-        scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x050510);
-
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-        scene.add(ambientLight);
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        dirLight.position.set(5, 12, 4);
-        scene.add(dirLight);
-
-        // Ground reference tracking grid mesh pattern
-        const gridHelper = new THREE.GridHelper(40, 40, 0x00adb5, 0x1c1c28);
-        gridHelper.position.y = 0.001;
-        scene.add(gridHelper);
-
-        // High Jump Landing Cushion Pit (5m wide x 3m deep x 0.7m high)
-        const pitGeo = new THREE.BoxGeometry(5, 0.7, 3);
-        const pitMat = new THREE.MeshStandardMaterial({ color: 0x0f4c81, roughness: 0.7 });
-        const pit = new THREE.Mesh(pitGeo, pitMat);
-        pit.position.set(0, 0.35, -5.5);
-        scene.add(pit);
-
-        // Track Standards (Upright posts)
-        const standardGeo = new THREE.CylinderGeometry(0.025, 0.025, 2.6, 16);
-        const standardMat = new THREE.MeshStandardMaterial({ color: 0x777777, metalness: 0.6 });
-        
-        leftStandard = new THREE.Mesh(standardGeo, standardMat);
-        leftStandard.position.set(-2.0, 1.3, -4.0);
-        scene.add(leftStandard);
-
-        rightStandard = new THREE.Mesh(standardGeo, standardMat);
-        rightStandard.position.set(2.0, 1.3, -4.0);
-        scene.add(rightStandard);
-
-        // The Crossbar
-        const barGeo = new THREE.CylinderGeometry(0.015, 0.015, 4.0, 16);
-        const barMat = new THREE.MeshStandardMaterial({ color: 0xffd700 });
-        crossbar = new THREE.Mesh(barGeo, barMat);
-        crossbar.rotation.z = Math.PI / 2;
-        crossbar.position.set(0, currentHeight, -4.0);
-        scene.add(crossbar);
-
-        // 2. Camera and Rendering Engine Mapping
-        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 1.6, 0);
-
-        renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.xr.enabled = true; // Auto-wires spatial pipeline bindings directly
-        document.body.appendChild(renderer.domElement);
-
-        // 3. System Adjustments Framework Functions
-        function adjustBar(amount) {
-            currentHeight = Math.max(0.5, Math.min(2.6, currentHeight + amount));
-            document.getElementById('height-display').innerText = currentHeight.toFixed(2);
-            crossbar.position.set(0, currentHeight, -4.0);
+        // 1. Math Engines: Native Matrix Calculations for 3D Movement
+        function createIdentityMatrix() {
+            return new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]);
         }
 
-        function setApproach(side) {
-            if(jApproachLine) scene.remove(jApproachLine);
+        // 2. Core Shader System: Renders solid color blocks directly via WebGL2
+        const vs = `#version 300 es
+            in vec4 position; in vec3 color; out vec3 vColor;
+            uniform mat4 uProj; uniform mat4 uView; uniform mat4 uMove;
+            void main() { vColor = color; gl_Position = uProj * uView * uMove * position; }`;
+        const fs = `#version 300 es
+            precision highp float; in vec3 vColor; out vec4 fColor;
+            void main() { fColor = vec4(vColor, 1.0); }`;
+        
+        const vsShader = gl.createShader(gl.VERTEX_SHADER); gl.shaderSource(vsShader, vs); gl.compileShader(vsShader);
+        const fsShader = gl.createShader(gl.FRAGMENT_SHADER); gl.shaderSource(fsShader, fs); gl.compileShader(fsShader);
+        const program = gl.createProgram(); gl.attachShader(program, vsShader); gl.attachShader(program, fsShader); gl.linkProgram(program);
 
-            const points = [];
-            const segments = 40;
-            const startX = side === 'left' ? -6 : 6;
+        let vao, numIndices;
+
+        // 3. Coordinate Generation: Re-draws the high jump environment dynamically
+        function updateTrackGeometry() {
+            const vertices = [];
+            const indices = [];
+            let vIdx = 0;
+
+            // Build Pit Cushion (Blue box: 5m wide, 3m deep, 0.7m high, centered 5.5m away)
+            const pX = 2.5, pY = 0.7, pZStart = -4, pZEnd = -7;
+            const pitColor = [0, 0.3, 0.8];
+            const pVerts = [
+                -pX,pY,pZStart, -pX,0,pZStart,  pX,0,pZStart,  pX,pY,pZStart, // Front wall
+                -pX,pY,pZEnd,   -pX,0,pZEnd,    pX,0,pZEnd,    pX,pY,pZEnd    // Back wall
+            ];
+            pVerts.forEach((v, i) => { vertices.push(v); if(i%3===2) vertices.push(...pitColor); });
+            indices.push(0,1,2, 0,2,3, 4,5,6, 4,6,7, 0,4,5, 0,5,1, 3,2,6, 3,6,7, 0,3,7, 0,7,4);
+            vIdx += 8;
+
+            // Build left standard post (Gray vertical stick at X: -2.0, Z: -4.0)
+            vertices.push(-2.03, 2.5, -4, 0.5,0.5,0.5,  -1.97, 2.5, -4, 0.5,0.5,0.5,  -1.97, 0, -4, 0.3,0.3,0.3,  -2.03, 0, -4, 0.3,0.3,0.3);
+            indices.push(vIdx, vIdx+1, vIdx+2, vIdx, vIdx+2, vIdx+3);
+            vIdx += 4;
+
+            // Build right standard post (Gray vertical stick at X: 2.0, Z: -4.0)
+            vertices.push(1.97, 2.5, -4, 0.5,0.5,0.5,   2.03, 2.5, -4, 0.5,0.5,0.5,   2.03, 0, -4, 0.3,0.3,0.3,   1.97, 0, -4, 0.3,0.3,0.3);
+            indices.push(vIdx, vIdx+1, vIdx+2, vIdx, vIdx+2, vIdx+3);
+            vIdx += 4;
+
+            // Build the dynamic Crossbar (Yellow horizontal bar set at currentHeight)
+            vertices.push(-2.0, currentHeight+0.015, -4, 1,0.8,0,  2.0, currentHeight+0.015, -4, 1,0.8,0,  2.0, currentHeight-0.015, -4, 0.8,0.6,0,  -2.0, currentHeight-0.015, -4, 0.8,0.6,0);
+            indices.push(vIdx, vIdx+1, vIdx+2, vIdx, vIdx+2, vIdx+3);
+            vIdx += 4;
+
+            // Build the dynamic curved J-Approach curve path line segment maps
+            const startX = currentApproach === 'left' ? -5.5 : 5.5;
+            const segments = 20;
+            const curveColor = [0, 0.9, 1.0];
             
-            for (let i = 0; i <= segments; i++) {
-                const t = i / segments;
-                let x = startX * (1 - t);
-                let z = -12 + (8 * t);
-                if (t > 0.5) {
-                    const curveT = (t - 0.5) * 2;
-                    x = (startX * 0.5) * (1 - curveT) + (side === 'left' ? -1.4 : 1.4) * curveT;
-                    z = -4.0 - 4.0 * Math.cos(curveT * Math.PI / 2);
-                }
-                points.push(new THREE.Vector3(x, 0.03, z));
+            for (let i = 0; i < segments; i++) {
+                const t1 = i / segments;
+                const t2 = (i + 1) / segments;
+                
+                let x1 = startX * (1 - t1), z1 = -11 + (7 * t1);
+                if (t1 > 0.5) { const cT = (t1 - 0.5) * 2; x1 = (startX * 0.5) * (1 - cT) + (currentApproach === 'left' ? -1.4 : 1.4) * cT; z1 = -4.0 - 3.5 * Math.cos(cT * Math.PI / 2); }
+                
+                let x2 = startX * (1 - t2), z2 = -11 + (7 * t2);
+                if (t2 > 0.5) { const cT = (t2 - 0.5) * 2; x2 = (startX * 0.5) * (1 - cT) + (currentApproach === 'left' ? -1.4 : 1.4) * cT; z2 = -4.0 - 3.5 * Math.cos(cT * Math.PI / 2); }
+
+                vertices.push(x1, 0.02, z1, ...curveColor,   x2, 0.02, z2, ...curveColor);
+                indices.push(vIdx, vIdx+1);
+                vIdx += 2;
             }
 
-            const curveGeo = new THREE.BufferGeometry().setFromPoints(points);
-            const curveMat = new THREE.LineBasicMaterial({ color: 0x00adb5 });
-            jApproachLine = new THREE.Line(curveGeo, curveMat);
-            scene.add(jApproachLine);
+            numIndices = indices.length;
+
+            // Bind data tracks inside GPU memory blocks cleanly
+            if (vao) gl.deleteVertexArray(vao);
+            vao = gl.createVertexArray(); gl.bindVertexArray(vao);
+            
+            const vbo = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vbo); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+            const ebo = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+            
+            const posAttr = gl.getAttribLocation(program, 'position'); gl.enableVertexAttribArray(posAttr); gl.vertexAttribPointer(posAttr, 3, gl.FLOAT, false, 24, 0);
+            const colAttr = gl.getAttribLocation(program, 'color'); gl.enableVertexAttribArray(colAttr); gl.vertexAttribPointer(colAttr, 3, gl.FLOAT, false, 24, 12);
         }
 
-        // Attach layout actions securely to clear inline parsing problems
-        document.getElementById('up-btn').addEventListener('click', () => adjustBar(0.05));
-        document.getElementById('down-btn').addEventListener('click', () => adjustBar(-0.05));
-        document.getElementById('left-approach-btn').addEventListener('click', () => setApproach('left'));
-        document.getElementById('right-approach-btn').addEventListener('click', () => setApproach('right'));
-        
-        setApproach('left');
+        // 4. Interactive HUD Menu Click Responders
+        document.getElementById('up-btn').addEventListener('click', () => { currentHeight = Math.min(2.50, currentHeight + 0.05); document.getElementById('height-display').innerText = currentHeight.toFixed(2); updateTrackGeometry(); });
+        document.getElementById('down-btn').addEventListener('click', () => { currentHeight = Math.max(0.50, currentHeight - 0.05); document.getElementById('height-display').innerText = currentHeight.toFixed(2); updateTrackGeometry(); });
+        document.getElementById('left-approach-btn').addEventListener('click', () => { currentApproach = 'left'; updateTrackGeometry(); });
+        document.getElementById('right-approach-btn').addEventListener('click', () => { currentApproach = 'right'; updateTrackGeometry(); });
 
-        // 4. Secure WebXR Device Activation Link Handshake
+        updateTrackGeometry();
+
+        // 5. Secure Hardware WebXR Lens Handshake Execution
         const vrTriggerBtn = document.getElementById('vr-trigger-btn');
-        
         if (navigator.xr) {
-            navigator.xr.isSessionSupported('immersive-vr').then(function(supported) {
-                if (supported) {
-                    vrTriggerBtn.style.display = 'block'; // Make button visible only when hardware validation clears
-                    vrTriggerBtn.addEventListener('click', enterImmersiveVR);
-                } else {
-                    vrTriggerBtn.style.display = 'block';
-                    vrTriggerBtn.innerText = "XR Hardware Denied By Browser Profile";
-                }
-            });
-        } else {
-            vrTriggerBtn.style.display = 'block';
-            vrTriggerBtn.innerText = "WebXR Hook Missing In Browser";
-        }
-
-        function enterImmersiveVR() {
-            navigator.xr.requestSession('immersive-vr', { requiredFeatures: ['local-floor'] }).then(function(session) {
-                document.getElementById('coach-hud').style.display = 'none';
-                vrTriggerBtn.style.display = 'none';
-                renderer.xr.setSession(session);
-            }).catch(function(err) {
-                alert("VR Initialization Aborted: " + err.message);
+            navigator.xr.isSessionSupported('immersive-vr').then(supported => {
+                if (supported) vrTriggerBtn.addEventListener('click', () => {
+                    navigator.xr.requestSession('immersive-vr', { requiredFeatures: ['local-floor'] }).then(session => {
+                        xrSession = session;
+                        document.getElementById('coach-hud').style.display = 'none';
+                        vrTriggerBtn.style.display = 'none';
+                        const xrLayer = new XRWebGLLayer(xrSession, gl);
+                        xrSession.updateRenderState({ baseLayer: xrLayer });
+                        xrSession.requestReferenceSpace('local-floor').then(space => { xrRefSpace = space; xrSession.requestAnimationFrame(onXRFrame); });
+                    });
+                });
             });
         }
 
-        // 5. Stable Rendering Ticker Loop
-        renderer.setAnimationLoop(function() {
-            renderer.render(scene, camera);
-        });
+        // 6. Infinite Frame Rendering Loop
+        function onXRFrame(time, frame) {
+            xrSession.requestAnimationFrame(onXRFrame);
+            const pose = frame.getViewerPose(xrRefSpace);
+            if (!pose) return;
 
-        window.addEventListener('resize', function() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-    </script>
-</body>
-</html>
+            const layer = xrSession.renderState.baseLayer;
+            gl.bindFramebuffer(gl.FRAMEBUFFER, layer.framebuffer);
+            gl.clearColor(0.01, 0.01, 0.03, 1.0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            gl.enable(gl.DEPTH_TEST);
+
+            const moveMatrix = createIdentityMatrix();
+
+            for (const view of pose.views) {
+                const viewport = layer.getViewport(view);
+                gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
+                gl.useProgram(program);
