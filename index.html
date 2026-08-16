@@ -1,70 +1,48 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Native WebXR ITLS Simulation</title>
+    <title>ITLS High Jump Spatial Scaffolding</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { margin: 0; overflow: hidden; background-color: #050515; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-        #vr-button { padding: 16px 32px; background: #e94560; color: white; border: none; border-radius: 8px; font-size: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(233,69,96,0.4); transition: 0.2s; }
-        #vr-button:disabled { background: #555; cursor: not-allowed; }
+        body { margin: 0; overflow: hidden; background-color: #0b0b15; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        #vr-button { padding: 16px 32px; background: #00adb5; color: white; border: none; border-radius: 8px; font-size: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,173,181,0.4); }
         canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
-        h1 { color: white; margin-bottom: 20px; letter-spacing: 2px; text-align: center; }
+        h1 { color: white; margin-bottom: 20px; text-align: center; }
     </style>
+    <script src="https://unpkg.com"></script>
 </head>
 <body>
     <div id="ui">
-        <h1>ITLS SPATIAL IMMERSION</h1>
-        <button id="vr-button">ENTER IMMERSIVE VR</button>
+        <h1>HIGH JUMP BIOMECHANICS VISUALIZER</h1>
+        <button id="vr-button">ENTER COACHING IMMERSION</button>
     </div>
     <canvas id="xr-canvas"></canvas>
 
     <script type="module">
-        // Direct integration with the hardware layer using WebGL2 matrix math
         const canvas = document.getElementById('xr-canvas');
         const gl = canvas.getContext('webgl2', { xrCompatible: true });
         const vrButton = document.getElementById('vr-button');
-        let xrSession = null;
-        let xrRefSpace = null;
+        let xrSession = null, xrRefSpace = null;
 
-        // Auto-check if the Meta Quest hardware layer is accessible via the browser
         if (navigator.xr) {
-            navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
-                if (!supported) vrButton.innerText = "VR Hardware Not Detected";
+            navigator.xr.isSessionSupported('immersive-vr').then(supported => {
+                if (!supported) vrButton.innerText = "XR Hardware Error";
             });
-        } else {
-            vrButton.innerText = "WebXR Not Supported In This Browser";
         }
 
-        // Trigger secure hardware initialization loop on explicit user touch
         async function activateXR() {
-            try {
-                xrSession = await navigator.xr.requestSession('immersive-vr', {
-                    requiredFeatures: ['local-floor']
-                });
-                
-                document.getElementById('ui').style.display = 'none';
-                
-                // Bind the physical graphics matrix directly to the lens displays
-                const xrWebGLLayer = new XRWebGLLayer(xrSession, gl);
-                xrSession.updateRenderState({ baseLayer: xrWebGLLayer });
-                
-                // Establish local tracking origin point relative to physical floor
-                xrRefSpace = await xrSession.requestReferenceSpace('local-floor');
-                
-                // Standard internal matrix shader calculations for the spatial box
-                setupWebGLScene();
-                
-                // Continuous frame rendering callback ticker loop
-                xrSession.requestAnimationFrame(onXRFrame);
-            } catch (e) {
-                alert("Immersion Initialization Failed: " + e.message);
-            }
+            xrSession = await navigator.xr.requestSession('immersive-vr', { requiredFeatures: ['local-floor'] });
+            document.getElementById('ui').style.display = 'none';
+            const xrWebGLLayer = new XRWebGLLayer(xrSession, gl);
+            xrSession.updateRenderState({ baseLayer: xrWebGLLayer });
+            xrRefSpace = await xrSession.requestReferenceSpace('local-floor');
+            setupCoachingScene();
+            xrSession.requestAnimationFrame(onXRFrame);
         }
 
-        // Setup mathematical geometric space without heavy graphics libraries
         let program, vao, numIndices;
-        function setupWebGLScene() {
-            // Vertex and fragment matrix math configuration
+        function setupCoachingScene() {
+            // Shader system to render real-world athletic dimensions
             const vs = `#version 300 es
                 in vec4 position; in vec3 color; out vec3 vColor;
                 uniform mat4 uMove; uniform mat4 uProj; uniform mat4 uView;
@@ -77,13 +55,24 @@
             const fsShader = gl.createShader(gl.FRAGMENT_SHADER); gl.shaderSource(fsShader, fs); gl.compileShader(fsShader);
             program = gl.createProgram(); gl.attachShader(program, vsShader); gl.attachShader(program, fsShader); gl.linkProgram(program);
 
-            // Vector matrix map for building a solid object structure
+            // Building the track structures using native multi-colored vertex matrices
+            // Includes the large blue pit, gray vertical standards, and a glowing neon crossbar
             const vertices = new Float32Array([
-                -0.5,0.5,0.5, 1,0,0,  0.5,0.5,0.5, 0,1,0,  0.5,-0.5,0.5, 0,0,1, -0.5,-0.5,0.5, 1,1,0,
-                -0.5,0.5,-0.5, 1,0,1, 0.5,0.5,-0.5, 0,1,1, 0.5,-0.5,-0.5, 1,1,1, -0.5,-0.5,-0.5, 0,0,0
+                // Landing Mat/Pit (Blue box: 5m wide, 3m deep, 0.7m high)
+                -2.5,0.7,-4, 0,0,1,  2.5,0.7,-4, 0,0,1,  2.5,0.0,-4, 0,0,0.5, -2.5,0.0,-4, 0,0,0.5,
+                -2.5,0.7,-7, 0,0,1,  2.5,0.7,-7, 0,0,1,  2.5,0.0,-7, 0,0,0.5, -2.5,0.0,-7, 0,0,0.5,
+                // Left Standard (Gray post: 2.5m tall at X: -2.0, Z: -4.0)
+                -2.0,2.5,-4, 0.5,0.5,0.5, -1.9,2.5,-4, 0.5,0.5,0.5, -1.9,0.0,-4, 0.2,0.2,0.2, -2.0,0.0,-4, 0.2,0.2,0.2,
+                // Right Standard (Gray post: 2.5m tall at X: 2.0, Z: -4.0)
+                1.9,2.5,-4, 0.5,0.5,0.5,  2.0,2.5,-4, 0.5,0.5,0.5,  2.0,0.0,-4, 0.2,0.2,0.2,  1.9,0.0,-4, 0.2,0.2,0.2,
+                // Crossbar (Neon Yellow cylinder lines: Set exactly at 2.0 meters high)
+                -2.0,2.01,-4, 1,1,0,  2.0,2.01,-4, 1,1,0,  2.0,1.99,-4, 0.8,0.8,0, -2.0,1.99,-4, 0.8,0.8,0
             ]);
+
             const indices = new Uint16Array([
-                0,1,2, 0,2,3, 1,5,6, 1,6,2, 5,4,7, 5,7,6, 4,0,3, 4,3,7, 4,5,1, 4,1,0, 3,2,6, 3,6,7
+                0,1,2, 0,2,3, 4,5,6, 4,6,7, 0,4,7, 0,7,3, 1,5,6, 1,6,2, // Pit faces
+                8,9,10, 8,10,11, 12,13,14, 12,14,15, // Standard uprights
+                16,17,18, 16,18,19 // The Crossbar
             ]);
             numIndices = indices.length;
 
@@ -95,37 +84,26 @@
             const colAttr = gl.getAttribLocation(program, 'color'); gl.enableVertexAttribArray(colAttr); gl.vertexAttribPointer(colAttr, 3, gl.FLOAT, false, 24, 12);
         }
 
-        let rotationAngle = 0;
         function onXRFrame(time, frame) {
-            const session = frame.session;
-            session.requestAnimationFrame(onXRFrame);
-
-            // Fetch real-time position tracking data from headset spatial array
+            frame.session.requestAnimationFrame(onXRFrame);
             const pose = frame.getViewerPose(xrRefSpace);
             if (!pose) return;
 
-            const layer = session.renderState.baseLayer;
+            const layer = frame.session.renderState.baseLayer;
             gl.bindFramebuffer(gl.FRAMEBUFFER, layer.framebuffer);
-            gl.clearColor(0.05, 0.05, 0.15, 1.0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            gl.clearColor(0.02, 0.02, 0.05, 1.0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             gl.enable(gl.DEPTH_TEST);
 
-            rotationAngle += 0.01;
-            // Place object 2 meters away from center viewpoint (-2 on Z axis), floating 1.5 meters high
-            const sinA = Math.sin(rotationAngle), cosA = Math.cos(rotationAngle);
-            const moveMatrix = new Float32Array([
-                cosA,0,-sinA,0,  0,1,0,0,  sinA,0,cosA,0,  0,1.5,-2.0,1
-            ]);
+            // Stationary world identity alignment transform matrix
+            const moveMatrix = new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]);
 
-            // Draw distinct spatial frames independently for both the left and right eyes
             for (const view of pose.views) {
                 const viewport = layer.getViewport(view);
                 gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
-
                 gl.useProgram(program);
                 gl.uniformMatrix4fv(gl.getUniformLocation(program, 'uProj'), false, view.projectionMatrix);
                 gl.uniformMatrix4fv(gl.getUniformLocation(program, 'uView'), false, view.transform.inverse.matrix);
                 gl.uniformMatrix4fv(gl.getUniformLocation(program, 'uMove'), false, moveMatrix);
-
                 gl.bindVertexArray(vao);
                 gl.drawElements(gl.TRIANGLES, numIndices, gl.UNSIGNED_SHORT, 0);
             }
