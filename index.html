@@ -1,66 +1,48 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Secure ITLS Spatial Simulation</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firewall-Immune ITLS 3D Simulation</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; }
-        #vr-button { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); padding: 12px 24px; background: #e94560; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; z-index: 999; font-family: sans-serif;}
+        /* Build the infinite physical void container */
+        body { margin: 0; background-color: #0b0b1a; color: white; font-family: sans-serif; height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; perspective: 800px; }
+        
+        /* Establish a true spatial coordinate node */
+        .stage { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; transform-style: preserve-3d; animation: spinWorld 15s linear infinite; }
+        
+        /* Create the concrete reference floor grid using pure styling */
+        .floor { position: absolute; width: 2000px; height: 2000px; background-image: radial-gradient(#393e46 1px, transparent 1px), radial-gradient(#222831 1px, transparent 1px); background-size: 40px 40px; background-position: 0 0, 20px 20px; transform: rotateX(90deg) translateY(500px); opacity: 0.7; transform-style: preserve-3d; }
+        
+        /* Central Interactive Learning Object */
+        .learning-cube { width: 150px; height: 150px; position: absolute; transform-style: preserve-3d; transform: translateY(-50px); }
+        .face { position: absolute; width: 150px; height: 150px; border: 3px solid #00adb5; background: rgba(0, 173, 181, 0.15); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; backface-visibility: visible; }
+        
+        /* Wrap the surfaces into an explicit 3D mesh volume */
+        .front  { transform: translateZ(75px); }
+        .back   { transform: rotateY(180deg) translateZ(75px); }
+        .left   { transform: rotateY(-90deg) translateZ(75px); }
+        .right  { transform: rotateY(90deg) translateZ(75px); }
+        .top    { transform: rotateX(90deg) translateZ(75px); }
+        .bottom { transform: rotateX(-90deg) translateZ(75px); }
+
+        /* Smooth mechanical continuous rotation loop */
+        @keyframes spinWorld {
+            0% { transform: rotateY(0deg) rotateX(15deg); }
+            100% { transform: rotateY(360deg) rotateX(15deg); }
+        }
     </style>
-    <!-- Lightweight, unblockable spatial core engine -->
-    <script src="https://unpkg.com"></script>
 </head>
 <body>
-    <button id="vr-button">START LEARNING IMMERSION</button>
-    <script>
-        // Setup the physical virtual world components
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x0a0a1a);
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
-
-        // Add a reference floor pattern grid
-        const gridHelper = new THREE.GridHelper(20, 20, 0x4cc3d9, 0x444444);
-        scene.add(gridHelper);
-
-        // Add central learning objects (Animated Neon Geometric Structures)
-        const geometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
-        const material = new THREE.MeshBasicMaterial({ color: 0xe94560, wireframe: true });
-        const cube = new THREE.Mesh(geometry, material);
-        cube.position.set(0, 1.5, -4);
-        scene.add(cube);
-
-        const sphereGeo = new THREE.SphereGeometry(0.8, 16, 16);
-        const sphereMat = new THREE.MeshBasicMaterial({ color: 0x0f4c81, wireframe: true });
-        const sphere = new THREE.Mesh(sphereGeo, sphereMat);
-        sphere.position.set(3, 1.5, -5);
-        scene.add(sphere);
-
-        camera.position.set(0, 1.6, 0);
-
-        // Simple animation look loop
-        function animate() {
-            requestAnimationFrame(animate);
-            cube.rotation.x += 0.01;
-            cube.rotation.y += 0.01;
-            sphere.rotation.y += 0.005;
-            renderer.render(scene, camera);
-        }
-        animate();
-
-        // Handle browser window size changes smoothly
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
-        // Activation hook to confirm canvas system response
-        document.getElementById('vr-button').addEventListener('click', () => {
-            alert('Core Engine Loaded Successfully! Network pipeline is fully verified.');
-        });
-    </script>
+    <!-- The Stage contains the spatial environment mapping elements -->
+    <div class="stage">
+        <div class="floor"></div>
+        <div class="learning-cube">
+            <div class="face front">ITLS</div>
+            <div class="face back">DESIGN</div>
+            <div class="face left">VR</div>
+            <div class="face right">MEDIA</div>
+            <div class="face top">LEARN</div>
+            <div class="face bottom">QUEST</div>
+        </div>
+    </div>
 </body>
 </html>
